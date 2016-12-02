@@ -134,8 +134,8 @@ public class MainActivity extends Activity
 
 				for(int index = 0; index < 3; ++index)
 				{
-					velocity[index] += event.values[index] * dt;
-					position[index] += velocity[index] * dt * 10000;
+					velocity[index] += event.values[index] * dt - settings.getVelocityFriction() * velocity[index];
+					position[index] += velocity[index] * dt * 10000 - settings.getPositionFriction() * position[index];
 				}
 			}
 			else
