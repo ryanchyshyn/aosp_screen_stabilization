@@ -1,0 +1,25 @@
+From b14faaab0cd8c2e830ef966cb1cb2bb39ee6d6f9 Mon Sep 17 00:00:00 2001
+From: Ruslan Yanchyshyn <ruslan.yanchyshyn@lemberg.co.uk>
+Date: Wed, 28 Sep 2016 21:08:08 +0300
+Subject: [PATCH] ScreenStabilization application added.
+
+---
+ target/product/core.mk | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/target/product/core.mk b/target/product/core.mk
+index d453303..a2a4f19 100644
+--- a/target/product/core.mk
++++ b/target/product/core.mk
+@@ -53,6 +53,7 @@ PRODUCT_PACKAGES += \
+     Telecom \
+     TeleService \
+     VpnDialogs \
+-    MmsService
++    MmsService \
++    ScreenStabilization
+ 
+ $(call inherit-product, $(SRC_TARGET_DIR)/product/core_base.mk)
+-- 
+2.7.4
+
