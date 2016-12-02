@@ -29,6 +29,8 @@ public class MainActivity extends Activity
 	private SensorManager sensorManager;
 	private Sensor accelerometer;
 
+	private final float[] tempAcc = new float[3];
+	private final float[] acc = new float[3];
 	private final float[] velocity = new float[3];
 	private final float[] position = new float[3];
 	private long timestamp = 0;
@@ -130,18 +132,31 @@ public class MainActivity extends Activity
 		{
 			if (timestamp != 0)
 			{
+				tempAcc[0] = Utils.rangeValue(event.values[0], -Constants.MAX_ACC, Constants.MAX_ACC);
+				tempAcc[1] = Utils.rangeValue(event.values[1], -Constants.MAX_ACC, Constants.MAX_ACC);
+				tempAcc[2] = Utils.rangeValue(event.values[2], -Constants.MAX_ACC, Constants.MAX_ACC);
+
+				Utils.lowPassFilter(tempAcc, acc, settings.getLowPassAlpha());
+
 				float dt = (event.timestamp - timestamp) * Constants.NS2S;
 
 				for(int index = 0; index < 3; ++index)
 				{
-					velocity[index] += event.values[index] * dt - settings.getVelocityFriction() * velocity[index];
-					position[index] += velocity[index] * dt * 10000 - settings.getPositionFriction() * position[index];
+					velocity[index] += acc[index] * dt - settings.getVelocityFriction() * velocity[index];
+					velocity[index] = Utils.fixNanOrInfinite(velocity[index]);
+
+					position[index] += velocity[index] * settings.getVelocityAmpl() * dt - settings.getPositionFriction() * position[index];
+					position[index] = Utils.rangeValue(position[index], -Constants.MAX_POS_SHIFT, Constants.MAX_POS_SHIFT);
 				}
 			}
 			else
 			{
 				velocity[0] = velocity[1] = velocity[2] = 0f;
 				position[0] = position[1] = position[2] = 0f;
+
+				acc[0] = Utils.rangeValue(event.values[0], -Constants.MAX_ACC, Constants.MAX_ACC);
+				acc[1] = Utils.rangeValue(event.values[1], -Constants.MAX_ACC, Constants.MAX_ACC);
+				acc[2] = Utils.rangeValue(event.values[2], -Constants.MAX_ACC, Constants.MAX_ACC);
 			}
 
 			timestamp = event.timestamp;
@@ -149,9 +164,9 @@ public class MainActivity extends Activity
 			layoutSensor.setTranslationX(-position[0]);
 			layoutSensor.setTranslationY(position[1]);
 
-			graph1.setValue(event.values[0]);
-			graph2.setValue(event.values[1]);
-			graph3.setValue(event.values[2]);
+			graph1.setValue(acc[0]);
+			graph2.setValue(acc[1]);
+			graph3.setValue(acc[2]);
 		}
 	};
 }
