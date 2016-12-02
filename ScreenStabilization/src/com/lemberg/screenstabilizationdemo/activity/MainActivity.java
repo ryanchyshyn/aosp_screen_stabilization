@@ -7,9 +7,12 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
+import com.lemberg.screenstabilizationdemo.dialog.SettingsDialog;
 import com.lemberg.screenstabilizationdemo.settings.AppSettings;
 import com.lemberg.screenstabilizationdemo.Constants;
 import com.lemberg.screenstabilizationdemo.view.LineGraphView;
@@ -70,6 +73,25 @@ public class MainActivity extends Activity
 		sensorManager.unregisterListener(sensorEventListener);
 	}
 
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu)
+	{
+		getMenuInflater().inflate(R.menu.main, menu);
+		return true;
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item)
+	{
+		switch (item.getItemId())
+		{
+			case R.id.action_settings:
+				showSettings();
+				return true;
+		}
+		return super.onOptionsItemSelected(item);
+	}
+
 	private void initViews()
 	{
 		View layoutRoot = findViewById(R.id.layout_root);
@@ -110,6 +132,12 @@ public class MainActivity extends Activity
 				graph3.clear();
 			}
 		});
+	}
+
+	private void showSettings()
+	{
+		SettingsDialog dlg = SettingsDialog.newInstance();
+		dlg.show(getFragmentManager(), "settings");
 	}
 
 	private void reset()

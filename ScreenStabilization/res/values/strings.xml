@@ -5,4 +5,11 @@
         make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged.
         It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software
         like Aldus PageMaker including versions of Lorem Ipsum.</string>
+    <string name="svc">SVC</string>
+    <string name="velocity_friction">Velocity friction</string>
+    <string name="_0_5">0.5</string>
+    <string name="position_friction">Position friction</string>
+    <string name="low_pass_filter_alpha">Low pass filter alpha</string>
+    <string name="_10000">10000</string>
+    <string name="velocity_amplification">Velocity amplification</string>
 </resources>
