@@ -1,6 +1,7 @@
 package com.lemberg.screenstabilizationdemo.activity;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -10,13 +11,16 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.CompoundButton;
+import android.widget.Switch;
 import android.widget.Toast;
 
-import com.lemberg.screenstabilizationdemo.dialog.SettingsDialog;
 import com.lemberg.screenstabilizationdemo.settings.AppSettings;
 import com.lemberg.screenstabilizationdemo.Constants;
 import com.lemberg.screenstabilizationdemo.view.LineGraphView;
 import com.lemberg.screenstabilizationdemo.R;
+import com.lemberg.screenstabilizationdemo.service.StabilizationService;
+import com.lemberg.screenstabilizationdemo.dialog.SettingsDialog;
 import com.lemberg.screenstabilizationdemo.utils.Utils;
 
 public class MainActivity extends Activity
@@ -77,6 +81,18 @@ public class MainActivity extends Activity
 	public boolean onCreateOptionsMenu(Menu menu)
 	{
 		getMenuInflater().inflate(R.menu.main, menu);
+
+		Switch switchSvc = (Switch) menu.findItem(R.id.action_svc_switch).getActionView().findViewById(R.id.switch_svc);
+		switchSvc.setChecked(settings.isServiceEnabled());
+
+		switchSvc.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener()
+		{
+			@Override
+			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
+			{
+				setSvcEnabled(isChecked);
+			}
+		});
 		return true;
 	}
 
@@ -140,10 +156,20 @@ public class MainActivity extends Activity
 		dlg.show(getFragmentManager(), "settings");
 	}
 
+	private void setSvcEnabled(boolean enabled)
+	{
+		if (enabled) startService(new Intent(this, StabilizationService.class));
+		else stopService(new Intent(this, StabilizationService.class));
+
+		settings.setServiceEnabled(enabled);
+		settings.saveDeferred();
+	}
+
 	private void reset()
 	{
 		position[0] = position[1] = position[2] = 0;
 		velocity[0] = velocity[1] = velocity[2] = 0;
+		acc[0] = acc[1] = acc[2] = 0;
 		timestamp = 0;
 
 		layoutSensor.setTranslationX(0);

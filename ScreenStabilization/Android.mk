@@ -10,6 +10,7 @@ LOCAL_AIDL_INCLUDES := $(call all-Iaidl-files-under, src)
 
 LOCAL_PACKAGE_NAME := ScreenStabilization
 LOCAL_CERTIFICATE := platform
+LOCAL_PRIVILEGED_MODULE := true
 
 LOCAL_PROGUARD_FLAG_FILES := proguard.flags
 
