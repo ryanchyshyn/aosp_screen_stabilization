@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    android:id="@+id/layout_root"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.lemberg.screenstabilizationdemo.activity.MainActivity">
+
+    <com.lemberg.screenstabilizationdemo.view.LineGraphView
+        android:id="@+id/graph3"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:layout_alignParentBottom="true"/>
+
+    <com.lemberg.screenstabilizationdemo.view.LineGraphView
+        android:id="@+id/graph2"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:layout_above="@id/graph3"
+        android:layout_marginBottom="1dp"/>
+
+    <com.lemberg.screenstabilizationdemo.view.LineGraphView
+        android:id="@+id/graph1"
+        android:layout_width="match_parent"
+        android:layout_height="100dp"
+        android:layout_above="@id/graph2"
+        android:layout_marginBottom="1dp"/>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/graph1"
+        android:background="@drawable/dots_repeat_bg"
+        android:clipChildren="false">
+
+        <LinearLayout
+            android:id="@+id/layout_sensor"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_margin="20dp"
+            android:orientation="vertical"
+            android:background="#5050FF">
+            <ImageView
+                android:id="@+id/img_test"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@mipmap/ic_launcher"/>
+
+            <TextView
+                android:id="@+id/txt_test"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/img_test"
+                android:textSize="15sp"
+                android:text="@string/test"/>
+
+        </LinearLayout>
+
+    </FrameLayout>
+</RelativeLayout>
