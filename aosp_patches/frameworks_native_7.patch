@@ -1,0 +1,188 @@
+From e16e5c1bed08ee6db396f7843bf07596355d442a Mon Sep 17 00:00:00 2001
+From: Ruslan Yanchyshyn <ruslan.yanchyshyn@lemberg.co.uk>
+Date: Wed, 7 Jun 2017 20:02:18 +0300
+Subject: [PATCH] Screen stabilization patches applied.
+
+---
+ services/surfaceflinger/DisplayDevice.cpp       | 24 ++++++++++++++++++++----
+ services/surfaceflinger/DisplayDevice.h         |  5 +++++
+ services/surfaceflinger/SurfaceFlinger.cpp      | 17 +++++++++++++++++
+ services/surfaceflinger/SurfaceFlinger.h        |  2 ++
+ services/surfaceflinger/SurfaceFlinger_hwc1.cpp | 17 +++++++++++++++++
+ 5 files changed, 61 insertions(+), 4 deletions(-)
+
+diff --git a/services/surfaceflinger/DisplayDevice.cpp b/services/surfaceflinger/DisplayDevice.cpp
+index 5c2c0ad..8befcf4 100644
+--- a/services/surfaceflinger/DisplayDevice.cpp
++++ b/services/surfaceflinger/DisplayDevice.cpp
+@@ -101,7 +101,8 @@ DisplayDevice::DisplayDevice(
+       mLayerStack(NO_LAYER_STACK),
+       mOrientation(),
+       mPowerMode(HWC_POWER_MODE_OFF),
+-      mActiveConfig(0)
++      mActiveConfig(0),
++      translateX(0), translateY(0)
+ {
+     Surface* surface;
+     mNativeWindow = surface = new Surface(producer, false);
+@@ -506,7 +507,7 @@ void DisplayDevice::setProjection(int orientation,
+     const int w = mDisplayWidth;
+     const int h = mDisplayHeight;
+ 
+-    Transform R;
++    R.reset();
+     DisplayDevice::orientationToTransfrom(orientation, w, h, &R);
+ 
+     if (!frame.isValid()) {
+@@ -530,7 +531,9 @@ void DisplayDevice::setProjection(int orientation,
+ 
+     dirtyRegion.set(getBounds());
+ 
+-    Transform TL, TP, S;
++    TL.reset();
++    TP.reset();
++    S.reset();
+     float src_width  = viewport.width();
+     float src_height = viewport.height();
+     float dst_width  = frame.width();
+@@ -548,10 +551,13 @@ void DisplayDevice::setProjection(int orientation,
+     TL.set(-src_x, -src_y);
+     TP.set(dst_x, dst_y);
+ 
++    Transform translate;
++    translate.set(translateX, translateY);
++
+     // The viewport and frame are both in the logical orientation.
+     // Apply the logical translation, scale to physical size, apply the
+     // physical translation and finally rotate to the physical orientation.
+-    mGlobalTransform = R * TP * S * TL;
++    mGlobalTransform = translate * R * TP * S * TL;
+ 
+     const uint8_t type = mGlobalTransform.getType();
+     mNeedsFiltering = (!mGlobalTransform.preserveRects() ||
+@@ -589,6 +595,16 @@ uint32_t DisplayDevice::getPrimaryDisplayOrientationTransform() {
+     return sPrimaryDisplayOrientation;
+ }
+ 
++void DisplayDevice::setTranslate(int x, int y) {
++	translateX = x;
++	translateY = y;
++
++    Transform translate;
++    translate.set(translateX, translateY);
++
++    mGlobalTransform = translate * R * TP * S * TL;
++}
++
+ void DisplayDevice::dump(String8& result) const {
+     const Transform& tr(mGlobalTransform);
+     result.appendFormat(
+diff --git a/services/surfaceflinger/DisplayDevice.h b/services/surfaceflinger/DisplayDevice.h
+index 105e980..06d0117 100644
+--- a/services/surfaceflinger/DisplayDevice.h
++++ b/services/surfaceflinger/DisplayDevice.h
+@@ -126,6 +126,7 @@ public:
+     void                    setLayerStack(uint32_t stack);
+     void                    setDisplaySize(const int newWidth, const int newHeight);
+     void                    setProjection(int orientation, const Rect& viewport, const Rect& frame);
++    void                    setTranslate(int x, int y);
+ 
+     int                     getOrientation() const { return mOrientation; }
+     uint32_t                getOrientationTransform() const;
+@@ -261,6 +262,10 @@ private:
+     // current active color mode
+     android_color_mode_t mActiveColorMode;
+ #endif
++
++	int translateX;
++	int translateY;
++	Transform R, TL, TP, S;
+ };
+ 
+ }; // namespace android
+diff --git a/services/surfaceflinger/SurfaceFlinger.cpp b/services/surfaceflinger/SurfaceFlinger.cpp
+index 8e7e577..9207f09 100644
+--- a/services/surfaceflinger/SurfaceFlinger.cpp
++++ b/services/surfaceflinger/SurfaceFlinger.cpp
+@@ -201,6 +201,15 @@ SurfaceFlinger::~SurfaceFlinger()
+     eglTerminate(display);
+ }
+ 
++void SurfaceFlinger::setTranslate(int x, int y)
++{
++	for (size_t dpy = 0 ; dpy < mDisplays.size() ; dpy++)
++	{
++		const sp<DisplayDevice>& hw(mDisplays[dpy]);
++		hw->setTranslate(x, y);
++	}
++}
++
+ void SurfaceFlinger::binderDied(const wp<IBinder>& /* who */)
+ {
+     // the window manager died on us. prepare its eulogy.
+@@ -3306,6 +3315,14 @@ status_t SurfaceFlinger::onTransact(
+                 mUseHwcVirtualDisplays = !n;
+                 return NO_ERROR;
+             }
++            case 2020: {
++                int x = data.readInt32();
++                int y = data.readInt32();
++                setTranslate(x, y);
++                invalidateHwcGeometry();
++                repaintEverything();
++                return NO_ERROR;
++            }
+         }
+     }
+     return err;
+diff --git a/services/surfaceflinger/SurfaceFlinger.h b/services/surfaceflinger/SurfaceFlinger.h
+index b98924b..0cd05cb 100644
+--- a/services/surfaceflinger/SurfaceFlinger.h
++++ b/services/surfaceflinger/SurfaceFlinger.h
+@@ -145,6 +145,8 @@ public:
+         return *mRenderEngine;
+     }
+ 
++    void setTranslate(int x, int y);
++
+ private:
+     friend class Client;
+     friend class DisplayEventConnection;
+diff --git a/services/surfaceflinger/SurfaceFlinger_hwc1.cpp b/services/surfaceflinger/SurfaceFlinger_hwc1.cpp
+index b32f652..3cb248e 100644
+--- a/services/surfaceflinger/SurfaceFlinger_hwc1.cpp
++++ b/services/surfaceflinger/SurfaceFlinger_hwc1.cpp
+@@ -199,6 +199,15 @@ SurfaceFlinger::~SurfaceFlinger()
+     eglTerminate(display);
+ }
+ 
++void SurfaceFlinger::setTranslate(int x, int y)
++{
++    for (size_t dpy = 0 ; dpy < mDisplays.size() ; dpy++)
++    {
++	const sp<DisplayDevice>& hw(mDisplays[dpy]);
++	hw->setTranslate(x, y);
++    }
++}
++
+ void SurfaceFlinger::binderDied(const wp<IBinder>& /* who */)
+ {
+     // the window manager died on us. prepare its eulogy.
+@@ -3199,6 +3208,14 @@ status_t SurfaceFlinger::onTransact(
+                 mUseHwcVirtualDisplays = !n;
+                 return NO_ERROR;
+             }
++            case 2020: {
++                int x = data.readInt32();
++                int y = data.readInt32();
++                setTranslate(x, y);
++                invalidateHwcGeometry();
++                repaintEverything();
++                return NO_ERROR;
++            }
+         }
+     }
+     return err;
+-- 
+2.7.4
+
